@@ -94,25 +94,53 @@ function render(customers) {
     });
 
     gsap.to(".row-animate", { duration: 0.5, opacity: 1, x: 0, stagger: 0.05 });
+    updateGlobalStats();
 }
 
 async function fetchAIInsight(customerId) {
     try {
         const res = await fetch(`../backend/ai_engine.php?id=${customerId}`);
         const ai = await res.json();
+        
+        // 1. Update the AI Badge cell
+        const aiCell = document.getElementById(`ai-insight-${customerId}`);
+        const bg = { blue:'bg-blue-50 text-blue-700', purple:'bg-purple-50 text-purple-700', orange:'bg-orange-50 text-orange-700', emerald:'bg-emerald-50 text-emerald-700' };
+        
+        aiCell.innerHTML = `
+            <div class="flex flex-col items-start gap-1">
+                <span class="px-2 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest ${bg[ai.color] || bg.blue}">
+                    <i class="fa-solid fa-bolt-lightning mr-1"></i> ${ai.insight}
+                </span>
+                <span class="text-[11px] text-slate-500 font-medium leading-tight ml-1">${ai.action}</span>
+            </div>
+        `;
 
-        // 1. Update the AI Badge
-        const cell = document.getElementById(`ai-insight-${customerId}`);
-        const bg = { blue: 'bg-blue-50 text-blue-700', purple: 'bg-purple-50 text-purple-700', orange: 'bg-orange-50 text-orange-700', emerald: 'bg-emerald-50 text-emerald-700' };
-        cell.innerHTML = `<span class="px-2 py-1 rounded-md border text-[9px] font-black uppercase ${bg[ai.color]}">${ai.insight}</span><br><span class="text-[10px] text-slate-500">${ai.action}</span>`;
+        // 2. UPDATE THE LTV COLUMN LIVE (This fixes your $0.00 issue!)
+        // Find the 3rd column in this row and update the text
+        const row = aiCell.closest('tr');
+        const ltvCell = row.querySelectorAll('td')[2]; 
+        ltvCell.innerText = `$${parseFloat(ai.real_ltv).toFixed(2)}`;
 
-        // 2. UPDATE THE LTV LIVE (This replaces the hardcoding!)
-        document.getElementById(`ltv-val-${customerId}`).innerText = `$${parseFloat(ai.calculated_ltv).toFixed(2)}`;
-
-        // 3. Update the Top Dashboard Card
+        // 3. Update the Top Dashboard Cards
         updateGlobalStats();
 
-    } catch (e) { console.error("AI Error"); }
+    } catch (e) {
+        console.warn("AI Sync failed for ID: " + customerId);
+    }
+}
+
+// Add this helper function at the bottom of app.js
+function updateGlobalStats() {
+    let grandTotal = 0;
+    // Sum up all the values currently in the 3rd column of the table
+    document.querySelectorAll('#customerList tr').forEach(row => {
+        const val = row.querySelectorAll('td')[2].innerText.replace('$', '');
+        grandTotal += parseFloat(val || 0);
+    });
+    
+    document.getElementById('totalRev').innerText = `$${grandTotal.toFixed(2)}`;
+    const count = document.querySelectorAll('#customerList tr').length;
+    document.getElementById('avgOrder').innerText = `$${(grandTotal / (count || 1)).toFixed(2)}`;
 }
 
 // Simple function to sum up all LTV cells and update the top card
@@ -124,35 +152,8 @@ function updateGlobalStats() {
     document.getElementById('totalRev').innerText = `$${grandTotal.toFixed(2)}`;
 
     const count = document.querySelectorAll('#customerList tr').length;
+    document.getElementById('totalCust').innerText = count;
     document.getElementById('avgOrder').innerText = `$${(grandTotal / (count || 1)).toFixed(2)}`;
-}
-
-// 6. AI HEURISTICS (Badges & Actions)
-async function fetchAIInsight(customerId) {
-    try {
-        const res = await fetch(`../backend/ai_engine.php?id=${customerId}`);
-        const ai = await res.json();
-        const cell = document.getElementById(`ai-insight-${customerId}`);
-
-        const bg = {
-            blue: 'bg-blue-50 text-blue-700 border-blue-100',
-            purple: 'bg-purple-50 text-purple-700 border-purple-100',
-            orange: 'bg-orange-50 text-orange-700 border-orange-100',
-            emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-            rose: 'bg-rose-50 text-rose-700 border-rose-100'
-        };
-
-        const colorClass = bg[ai.color] || bg.blue;
-
-        cell.innerHTML = `
-            <div class="flex flex-col items-start gap-1">
-                <span class="px-2 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest ${colorClass}">
-                    <i class="fa-solid fa-bolt-lightning mr-1"></i> ${ai.insight}
-                </span>
-                <span class="text-[11px] text-slate-500 font-medium leading-tight ml-1">${ai.action}</span>
-            </div>
-        `;
-    } catch (e) { console.warn("AI Analysis Timed Out for ID: " + customerId); }
 }
 
 // 7. ORDER MODAL LOGIC

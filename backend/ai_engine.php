@@ -1,11 +1,10 @@
 <?php
-// backend/ai_engine.php
 header('Content-Type: application/json');
 require_once '../config/api_keys.php';
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-function fetch_wc_data($endpoint) {
+function fetch_wc($endpoint) {
     $ch = curl_init(WC_STORE_URL . $endpoint);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_USERPWD, WC_CONSUMER_KEY . ':' . WC_CONSUMER_SECRET);
@@ -15,75 +14,36 @@ function fetch_wc_data($endpoint) {
     return json_decode($res, true);
 }
 
-$customer = fetch_wc_data("/wp-json/wc/v3/customers/$id");
-$orders = fetch_wc_data("/wp-json/wc/v3/orders?customer=$id");
+// 1. Fetch all orders for this specific customer
+$orders = fetch_wc("/wp-json/wc/v3/orders?customer=$id");
 
-// 1. DATA EXTRACTION
-$ltv = (float)($customer['total_spent'] ?? 0);
-$order_count = count($orders);
+$calculated_ltv = 0;
 $has_pending = false;
-$last_order_date = null;
 
-if (is_array($orders) && $order_count > 0) {
-    $last_order_date = $orders[0]['date_created']; // WooCommerce usually returns newest first
+// 2. MANUALLY CALCULATE the total spent right here
+if (is_array($orders)) {
     foreach($orders as $o) {
-        if(in_array($o['status'], ['pending', 'on-hold'])) {
-            $has_pending = true;
-        }
+        $calculated_ltv += (float)$o['total'];
+        if(in_array($o['status'], ['pending', 'on-hold'])) $has_pending = true;
     }
 }
 
-// 2. RECENCY CALCULATION
-$days_since_last = 999; 
-if ($last_order_date) {
-    $last_dt = new DateTime($last_order_date);
-    $now = new DateTime();
-    $days_since_last = $now->diff($last_dt)->format("%a");
+// 3. Logic Tier
+$insight = "New Lead"; $action = "Intro sequence."; $color = "blue";
+
+if($calculated_ltv > 200) { 
+    $insight = "Whale / VIP"; $action = "Priority Support."; $color = "purple"; 
+} else if($has_pending) { 
+    $insight = "Risk"; $action = "Payment Follow-up."; $color = "orange"; 
+} else if(count($orders) > 1) { 
+    $insight = "Loyal Fan"; $action = "Request Review."; $color = "emerald"; 
 }
 
-// 3. THE INTELLIGENCE HEURISTICS (RFM Logic)
-$insight = "New Lead"; 
-$action = "Initial welcome sequence."; 
-$color = "blue";
-
-// Logic Tier: Priority Highest to Lowest
-if ($has_pending) {
-    // Immediate Priority: The user is stuck at checkout
-    $insight = "Cart Abandoner";
-    $action = "Send 10% 'Finish Purchase' code.";
-    $color = "orange";
-} 
-else if ($ltv > 1000 || ($ltv > 500 && $order_count > 5)) {
-    // High Value VIP
-    $insight = "Whale / VIP";
-    $action = "Priority Support + Birthday Gift.";
-    $color = "purple";
-}
-else if ($days_since_last > 30 && $order_count > 1) {
-    // Churn Risk: They used to buy, but stopped
-    $insight = "Slipping Away";
-    $action = "Win-back campaign required.";
-    $color = "rose";
-}
-else if ($order_count >= 3 && $days_since_last < 7) {
-    // High Frequency + Recent
-    $insight = "Brand Fanatic";
-    $action = "Request a Google Review.";
-    $color = "emerald";
-}
-else if ($order_count > 0) {
-    $insight = "Active Customer";
-    $action = "Cross-sell related items.";
-    $color = "indigo";
-}
-
+// 4. Return everything including the new LTV
 echo json_encode([
     'insight' => $insight, 
     'action' => $action, 
     'color' => $color,
-    'meta' => [
-        'days_last' => $days_since_last,
-        'order_vol' => $order_count
-    ]
+    'real_ltv' => $calculated_ltv
 ]);
 ?>
