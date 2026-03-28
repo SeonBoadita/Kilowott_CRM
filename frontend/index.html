@@ -1,62 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"><title>Kilowott CRM Pro</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kilowott CRM Pro | AI Intelligence Dashboard</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>.glass { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); }</style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(12px); }
+        /* Used for GSAP stagger initial state */
+        .row-hidden { opacity: 0; transform: translateX(-20px); }
+    </style>
 </head>
-<body class="bg-slate-100 p-6 font-sans">
+<body class="bg-slate-50 p-6 min-h-screen font-sans text-slate-900">
+    <div id="toastContainer" class="fixed bottom-10 right-10 z-[100] flex flex-col gap-3"></div>
     <div class="max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-slate-800">CRM Dashboard</h1>
-            <button id="syncBtn" class="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow hover:bg-indigo-700 transition">Sync Store Data</button>
+        <header class="flex justify-between items-center mb-10">
+            <div>
+                <h1 class="text-4xl font-black tracking-tight text-slate-800 uppercase">
+                    Kilowott <span class="text-indigo-600">AI-CRM</span>
+                </h1>
+                <p class="text-slate-400 text-sm mt-1 font-bold tracking-widest uppercase">Enterprise System Integration</p>
+            </div>
+            <button id="syncBtn" class="bg-indigo-600 text-white px-8 py-3 rounded-xl shadow-lg hover:bg-indigo-700 transition flex items-center gap-2 font-bold active:scale-95">
+                <i class="fa-solid fa-bolt"></i> Sync Live Data
+            </button>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="glass p-8 rounded-2xl border border-white shadow-xl stat-card">
+                <p class="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-dollar-sign text-emerald-500"></i> Total Revenue
+                </p>
+                <h2 id="totalRev" class="text-4xl font-black text-slate-800 mt-2">$0.00</h2>
+            </div>
+            <div class="glass p-8 rounded-2xl border border-white shadow-xl stat-card">
+                <p class="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-users text-indigo-500"></i> Total Customers
+                </p>
+                <h2 id="totalCust" class="text-4xl font-black text-slate-800 mt-2">0</h2>
+            </div>
+            <div class="glass p-8 rounded-2xl border border-white shadow-xl stat-card">
+                <p class="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-amber-500"></i> Avg. Lifetime Value
+                </p>
+                <h2 id="avgOrder" class="text-4xl font-black text-slate-800 mt-2">$0.00</h2>
+            </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-4 mb-8">
-            <div class="glass p-6 rounded-xl border border-white shadow-sm">
-                <p class="text-xs font-bold text-slate-400 uppercase">Total Revenue</p>
-                <h2 id="totalRev" class="text-2xl font-bold text-emerald-600">$0.00</h2>
-            </div>
-            <div class="glass p-6 rounded-xl border border-white shadow-sm">
-                <p class="text-xs font-bold text-slate-400 uppercase">Customers</p>
-                <h2 id="totalCust" class="text-2xl font-bold text-slate-800">0</h2>
-            </div>
-            <div class="glass p-6 rounded-xl border border-white shadow-sm">
-                <p class="text-xs font-bold text-slate-400 uppercase">Avg Order</p>
-                <h2 id="avgOrder" class="text-2xl font-bold text-indigo-600">$0.00</h2>
-            </div>
+        <div class="mb-6 relative search-container">
+            <i class="fa-solid fa-magnifying-glass absolute left-5 top-5 text-slate-300"></i>
+            <input type="text" id="customerSearch" placeholder="Search by name, email, or AI status..." 
+                   class="w-full p-5 pl-14 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:outline-none shadow-sm transition-all text-lg">
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
-            <table class="w-full text-left">
-                <thead class="bg-slate-50 border-b border-slate-200">
-                    <tr class="text-slate-500 text-xs uppercase font-bold">
-                        <th class="p-4">Customer</th><th class="p-4">Email</th><th class="p-4">LTV</th><th class="p-4 text-right">Actions</th>
+        <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-50/50 border-b border-slate-100">
+                    <tr class="text-slate-400 text-xs uppercase font-black tracking-widest">
+                        <th class="p-6">Customer Profile</th>
+                        <th class="p-6">AI Intelligence</th>
+                        <th class="p-6 text-center">LTV (Spent)</th>
+                        <th class="p-6 text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="customerList" class="divide-y divide-slate-100"></tbody>
+                <tbody id="customerList" class="divide-y divide-slate-50">
+                    <tr>
+                        <td colspan="4" class="p-20 text-center text-slate-300 font-medium">
+                            <i class="fa-solid fa-database mb-2 block text-2xl"></i>
+                            Waiting for secure data sync...
+                        </td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </div>
 
-    <div id="noteModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
-        <div class="bg-white p-6 rounded-xl w-96 shadow-2xl">
-            <h3 class="text-lg font-bold mb-4">Add Internal Note</h3>
-            <textarea id="noteContent" class="w-full border p-3 rounded-lg mb-4" rows="4" placeholder="Type here..."></textarea>
-            <div class="flex justify-end gap-2">
-                <button onclick="document.getElementById('noteModal').classList.add('hidden')" class="px-4 py-2 text-slate-500">Cancel</button>
-                <button id="confirmSaveNote" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save to DB</button>
+    <div id="noteModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center z-50 backdrop-blur-md">
+        <div class="bg-white p-8 rounded-3xl w-[450px] shadow-2xl border border-white/20">
+            <h3 class="text-2xl font-black mb-2 text-slate-800">Add Internal Note</h3>
+            <p class="text-slate-400 text-sm mb-6 font-medium">Notes are vaulted in the local isolated database.</p>
+            <textarea id="noteContent" class="w-full border-2 border-slate-100 p-4 rounded-2xl mb-6 focus:border-indigo-500 outline-none transition-all" rows="4" placeholder="Enter follow-up details..."></textarea>
+            <div class="flex justify-end gap-4">
+                <button onclick="document.getElementById('noteModal').classList.add('hidden')" class="px-6 py-3 text-slate-400 font-bold hover:text-slate-600 transition">Cancel</button>
+                <button id="confirmSaveNote" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-indigo-200">
+                    <i class="fa-solid fa-shield-halved"></i> Secure Save
+                </button>
             </div>
         </div>
     </div>
 
-    <div id="orderModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
-        <div class="bg-white p-6 rounded-xl w-[500px] shadow-2xl max-h-[80vh] overflow-y-auto">
-            <h3 class="text-lg font-bold mb-4">Order History</h3>
-            <div id="orderContent"></div>
-            <button onclick="document.getElementById('orderModal').classList.add('hidden')" class="mt-4 w-full bg-slate-100 py-2 rounded">Close</button>
+    <div id="orderModal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center z-50 backdrop-blur-md">
+        <div class="bg-white p-8 rounded-3xl w-[600px] shadow-2xl max-h-[80vh] flex flex-col border border-white/20">
+            <h3 class="text-2xl font-black mb-6 text-slate-800">Order Intelligence</h3>
+            <div id="orderContent" class="flex-grow overflow-y-auto space-y-4 pr-2">
+                </div>
+            <button onclick="document.getElementById('orderModal').classList.add('hidden')" class="mt-8 w-full bg-slate-100 py-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-200 transition">
+                Close Report
+            </button>
         </div>
     </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            gsap.from("header", { duration: 1, y: -50, opacity: 0, ease: "power3.out" });
+            gsap.from(".stat-card", { duration: 1, y: 30, opacity: 0, stagger: 0.2, ease: "elastic.out(1, 0.6)", delay: 0.2 });
+            gsap.from(".search-container", { duration: 0.8, opacity: 0, y: 20, ease: "power2.out", delay: 0.6 });
+        });
+    </script>
 
     <script src="app.js"></script>
 </body>
