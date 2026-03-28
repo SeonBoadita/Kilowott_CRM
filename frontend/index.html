@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><title>Kilowott CRM Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>.glass { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); }</style>
+</head>
+<body class="bg-slate-100 p-6 font-sans">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800">CRM Dashboard</h1>
+            <button id="syncBtn" class="bg-indigo-600 text-white px-6 py-2 rounded-lg shadow hover:bg-indigo-700 transition">Sync Store Data</button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="glass p-6 rounded-xl border border-white shadow-sm">
+                <p class="text-xs font-bold text-slate-400 uppercase">Total Revenue</p>
+                <h2 id="totalRev" class="text-2xl font-bold text-emerald-600">$0.00</h2>
+            </div>
+            <div class="glass p-6 rounded-xl border border-white shadow-sm">
+                <p class="text-xs font-bold text-slate-400 uppercase">Customers</p>
+                <h2 id="totalCust" class="text-2xl font-bold text-slate-800">0</h2>
+            </div>
+            <div class="glass p-6 rounded-xl border border-white shadow-sm">
+                <p class="text-xs font-bold text-slate-400 uppercase">Avg Order</p>
+                <h2 id="avgOrder" class="text-2xl font-bold text-indigo-600">$0.00</h2>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                    <tr class="text-slate-500 text-xs uppercase font-bold">
+                        <th class="p-4">Customer</th><th class="p-4">Email</th><th class="p-4">LTV</th><th class="p-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="customerList" class="divide-y divide-slate-100"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="noteModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl w-96 shadow-2xl">
+            <h3 class="text-lg font-bold mb-4">Add Internal Note</h3>
+            <textarea id="noteContent" class="w-full border p-3 rounded-lg mb-4" rows="4" placeholder="Type here..."></textarea>
+            <div class="flex justify-end gap-2">
+                <button onclick="document.getElementById('noteModal').classList.add('hidden')" class="px-4 py-2 text-slate-500">Cancel</button>
+                <button id="confirmSaveNote" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Save to DB</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="orderModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl w-[500px] shadow-2xl max-h-[80vh] overflow-y-auto">
+            <h3 class="text-lg font-bold mb-4">Order History</h3>
+            <div id="orderContent"></div>
+            <button onclick="document.getElementById('orderModal').classList.add('hidden')" class="mt-4 w-full bg-slate-100 py-2 rounded">Close</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

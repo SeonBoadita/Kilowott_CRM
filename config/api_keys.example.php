@@ -1,0 +1,5 @@
+<?php
+define('WC_STORE_URL', 'YOUR_URL_HERE');
+define('WC_CONSUMER_KEY', 'ck_YOUR_KEY_HERE');
+define('WC_CONSUMER_SECRET', 'cs_YOUR_SECRET_HERE');
+?>
